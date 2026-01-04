@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ascend | Smart Habit Engineering</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --accent: #6366f1;
+            --accent-soft: #e0e7ff;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --border: #e2e8f0;
+            --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --accent-soft: #312e81;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        /* Layout */
+        .app-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 100vh;
+        }
+
+        @media (max-width: 1024px) {
+            .app-container { grid-template-columns: 1fr; }
+            aside { display: none; }
+        }
+
+        /* Sidebar */
+        aside {
+            background-color: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .nav-item {
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background-color: var(--accent-soft);
+            color: var(--accent);
+        }
+
+        /* Main Content */
+        main {
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: 0.5rem;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-secondary { background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-main); }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        /* Habit Cards Grid */
+        .habit-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .habit-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            position: relative;
+        }
+
+        .habit-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .habit-title { font-weight: 700; font-size: 1.1rem; }
+        .habit-category { font-size: 0.75rem; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+
+        .streak-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            background: #fffbeb;
+            color: #b45309;
+            padding: 0.25rem 0.6rem;
+            border-radius: 1rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .check-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .check-day {
+            aspect-ratio: 1;
+            border: 1px solid var(--border);
+            border-radius: 0.4rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .check-day.completed { background: var(--success); color: white; border-color: var(--success); }
+        .check-day.missed { background: var(--danger); color: white; border-color: var(--danger); }
+        .check-day.disabled { opacity: 0.3; cursor: not-allowed; }
+        .check-day.today { border: 2px solid var(--accent); }
+
+        /* Dashboard & Charts */
+        .dashboard-section {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .analytics-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            border-radius: 1rem;
+        }
+
+        .insight-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .insight-item {
+            padding: 1rem;
+            border-left: 4px solid var(--accent);
+            background: var(--bg-primary);
+            font-size: 0.9rem;
+            border-radius: 0 0.5rem 0.5rem 0;
+        }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            place-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            padding: 2rem;
+            border-radius: 1rem;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+        }
+
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label { display: block; font-size: 0.85rem; margin-bottom: 0.5rem; color: var(--text-muted); }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border);
+            background: var(--bg-primary);
+            color: var(--text-main);
+        }
+
+        /* Empty States */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            grid-column: 1 / -1;
+            color: var(--text-muted);
+        }
+
+        /* Discipline Alerts */
+        #alert-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            z-index: 2000;
+        }
+
+        .alert {
+            background: var(--bg-secondary);
+            border-left: 4px solid var(--danger);
+            padding: 1rem 1.5rem;
+            box-shadow: var(--card-shadow);
+            border-radius: 0.4rem;
+            animation: slideIn 0.3s ease-out;
+            max-width: 350px;
+        }
+
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <aside>
+            <div class="logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>
+                ASCEND
+            </div>
+            <nav>
+                <ul class="nav-links">
+                    <li class="nav-item active" onclick="app.switchView('habits')">Habits</li>
+                    <li class="nav-item" onclick="app.switchView('stats')">Analytics</li>
+                    <li class="nav-item" onclick="app.toggleTheme()">Toggle Theme</li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main id="view-container">
+            <!-- Dynamic Content Injected Here -->
+        </main>
+    </div>
+
+    <!-- Alert Toast Container -->
+    <div id="alert-container"></div>
+
+    <!-- Add Habit Modal -->
+    <div class="modal-overlay" id="habit-modal">
+        <div class="modal-content">
+            <h2 id="modal-title" style="margin-bottom: 1.5rem">New Habit</h2>
+            <form id="habit-form">
+                <input type="hidden" id="edit-id">
+                <div class="form-group">
+                    <label>Habit Name</label>
+                    <input type="text" id="habit-name" placeholder="e.g., Deep Work" required>
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="habit-category">
+                        <option value="Health">Health</option>
+                        <option value="Study">Study</option>
+                        <option value="Fitness">Fitness</option>
+                        <option value="Personal">Personal</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Frequency</label>
+                    <select id="habit-frequency">
+                        <option value="daily">Every Day</option>
+                        <option value="weekdays">Weekdays</option>
+                        <option value="weekends">Weekends</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="button" class="btn btn-secondary" style="flex: 1" onclick="app.closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="flex: 1">Save Habit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * CORE LOGIC CLASSES (Modular Approach in Single File)
+         */
+
+        class StorageManager {
+            static save(data) {
+                localStorage.setItem('ascend_habit_data', JSON.stringify(data));
+            }
+            static load() {
+                const data = localStorage.getItem('ascend_habit_data');
+                return data ? JSON.parse(data) : { habits: [], theme: 'light' };
+            }
+        }
+
+        class HabitLogic {
+            static getFormattedDate(date) {
+                return date.toISOString().split('T')[0];
+            }
+
+            static getPastDays(count = 7) {
+                const days = [];
+                for (let i = count - 1; i >= 0; i--) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    days.push({
+                        date: this.getFormattedDate(d),
+                        label: d.toLocaleDateString('en-US', { weekday: 'short' }),
+                        dayNum: d.getDate()
+                    });
+                }
+                return days;
+            }
+
+            static calculateStreak(habit) {
+                let currentStreak = 0;
+                const today = new Date();
+                const logs = habit.logs || {};
+
+                // Check starting from today or yesterday
+                let checkDate = new Date();
+                
+                while (true) {
+                    const dateStr = this.getFormattedDate(checkDate);
+                    const isRequired = this.isDateRequired(checkDate, habit.frequency);
+                    
+                    if (isRequired) {
+                        if (logs[dateStr] === 'completed') {
+                            currentStreak++;
+                        } else if (dateStr !== this.getFormattedDate(today)) {
+                            // If it's a required day in the past and not completed, streak is broken
+                            break;
+                        }
+                    }
+
+                    checkDate.setDate(checkDate.getDate() - 1);
+                    // Prevent infinite or excessive loops
+                    if (currentStreak > 365) break; 
+                }
+
+                return currentStreak;
+            }
+
+            static isDateRequired(date, frequency) {
+                const day = date.getDay(); // 0 (Sun) to 6 (Sat)
+                if (frequency === 'daily') return true;
+                if (frequency === 'weekdays') return day !== 0 && day !== 6;
+                if (frequency === 'weekends') return day === 0 || day === 6;
+                return true;
+            }
+
+            static detectMissedDays(habit) {
+                const logs = habit.logs || {};
+                const today = new Date();
+                const alerts = [];
+                
+                // Check last 7 days for untracked required days
+                for (let i = 1; i <= 7; i++) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    const dateStr = this.getFormattedDate(d);
+                    
+                    if (this.isDateRequired(d, habit.frequency) && !logs[dateStr]) {
+                        logs[dateStr] = 'missed';
+                        alerts.push(`Missed ${habit.name} on ${dateStr}. Streak reset.`);
+                    }
+                }
+                return { logs, alerts };
+            }
+        }
+
+        class App {
+            constructor() {
+                const stored = StorageManager.load();
+                this.habits = stored.habits;
+                this.currentView = 'habits';
+                this.theme = stored.theme;
+                
+                this.init();
+            }
+
+            init() {
+                document.documentElement.setAttribute('data-theme', this.theme);
+                this.setupEventListeners();
+                this.maintenance();
+                this.render();
+            }
+
+            setupEventListeners() {
+                document.getElementById('habit-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.saveHabit();
+                });
+            }
+
+            maintenance() {
+                // Auto-detect misses for all habits
+                let updated = false;
+                this.habits.forEach(habit => {
+                    const result = HabitLogic.detectMissedDays(habit);
+                    if (result.alerts.length > 0) {
+                        habit.logs = result.logs;
+                        result.alerts.forEach(msg => this.showAlert(msg));
+                        updated = true;
+                    }
+                });
+                if (updated) this.persist();
+            }
+
+            persist() {
+                StorageManager.save({ habits: this.habits, theme: this.theme });
+            }
+
+            toggleTheme() {
+                this.theme = this.theme === 'light' ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', this.theme);
+                this.persist();
+            }
+
+            switchView(view) {
+                this.currentView = view;
+                const items = document.querySelectorAll('.nav-item');
+                items.forEach(item => item.classList.remove('active'));
+                
+                if (view === 'habits') items[0].classList.add('active');
+                if (view === 'stats') items[1].classList.add('active');
+
+                this.render();
+            }
+
+            openModal(habitId = null) {
+                const modal = document.getElementById('habit-modal');
+                const title = document.getElementById('modal-title');
+                const form = document.getElementById('habit-form');
+                
+                modal.style.display = 'grid';
+                
+                if (habitId) {
+                    const habit = this.habits.find(h => h.id === habitId);
+                    title.innerText = 'Edit Habit';
+                    document.getElementById('edit-id').value = habit.id;
+                    document.getElementById('habit-name').value = habit.name;
+                    document.getElementById('habit-category').value = habit.category;
+                    document.getElementById('habit-frequency').value = habit.frequency;
+                } else {
+                    title.innerText = 'New Habit';
+                    form.reset();
+                    document.getElementById('edit-id').value = '';
+                }
+            }
+
+            closeModal() {
+                document.getElementById('habit-modal').style.display = 'none';
+            }
+
+            saveHabit() {
+                const id = document.getElementById('edit-id').value;
+                const habitData = {
+                    name: document.getElementById('habit-name').value,
+                    category: document.getElementById('habit-category').value,
+                    frequency: document.getElementById('habit-frequency').value,
+                };
+
+                if (id) {
+                    const index = this.habits.findIndex(h => h.id === id);
+                    this.habits[index] = { ...this.habits[index], ...habitData };
+                } else {
+                    this.habits.push({
+                        id: crypto.randomUUID(),
+                        ...habitData,
+                        createdAt: new Date().toISOString(),
+                        logs: {}
+                    });
+                }
+
+                this.persist();
+                this.closeModal();
+                this.render();
+            }
+
+            deleteHabit(id) {
+                if (confirm('Permanently delete this habit and all history?')) {
+                    this.habits = this.habits.filter(h => h.id !== id);
+                    this.persist();
+                    this.render();
+                }
+            }
+
+            toggleLog(habitId, dateStr) {
+                const habit = this.habits.find(h => h.id === habitId);
+                const current = habit.logs[dateStr];
+                
+                if (new Date(dateStr) > new Date()) return; // No future cheating
+
+                if (current === 'completed') {
+                    delete habit.logs[dateStr];
+                } else {
+                    habit.logs[dateStr] = 'completed';
+                }
+                
+                this.persist();
+                this.render();
+            }
+
+            showAlert(msg) {
+                const container = document.getElementById('alert-container');
+                const alert = document.createElement('div');
+                alert.className = 'alert';
+                alert.innerHTML = `<strong>Discipline Alert:</strong><br>${msg}`;
+                container.appendChild(alert);
+                setTimeout(() => alert.remove(), 5000);
+            }
+
+            render() {
+                const container = document.getElementById('view-container');
+                
+                if (this.currentView === 'habits') {
+                    this.renderHabitsView(container);
+                } else {
+                    this.renderStatsView(container);
+                }
+            }
+
+            renderHabitsView(container) {
+                container.innerHTML = `
+                    <header>
+                        <div>
+                            <h1>My Discipline</h1>
+                            <p style="color: var(--text-muted)">Tracking ${this.habits.length} active systems</p>
+                        </div>
+                        <div class="header-actions">
+                            <button class="btn btn-primary" onclick="app.openModal()">+ Add Habit</button>
+                        </div>
+                    </header>
+                    <div class="habit-grid" id="habit-list"></div>
+                `;
+
+                const list = document.getElementById('habit-list');
+                if (this.habits.length === 0) {
+                    list.innerHTML = `<div class="empty-state"><h3>No habits found</h3><p>Start by adding a new habit above.</p></div>`;
+                    return;
+                }
+
+                const pastDays = HabitLogic.getPastDays(7);
+                const todayStr = HabitLogic.getFormattedDate(new Date());
+
+                this.habits.forEach(habit => {
+                    const streak = HabitLogic.calculateStreak(habit);
+                    const card = document.createElement('div');
+                    card.className = 'habit-card';
+                    card.innerHTML = `
+                        <div class="habit-header">
+                            <div>
+                                <div class="habit-category">${habit.category}</div>
+                                <div class="habit-title">${habit.name}</div>
+                            </div>
+                            <div class="streak-badge">🔥 ${streak}</div>
+                        </div>
+                        
+                        <div class="check-grid">
+                            ${pastDays.map(day => {
+                                const status = habit.logs[day.date] || '';
+                                const isRequired = HabitLogic.isDateRequired(new Date(day.date), habit.frequency);
+                                const isToday = day.date === todayStr;
+                                const isFuture = new Date(day.date) > new Date();
+                                
+                                let classList = 'check-day';
+                                if (status === 'completed') classList += ' completed';
+                                if (status === 'missed') classList += ' missed';
+                                if (!isRequired) classList += ' disabled';
+                                if (isToday) classList += ' today';
+
+                                return `
+                                    <div class="${classList}" 
+                                         onclick="app.toggleLog('${habit.id}', '${day.date}')"
+                                         title="${day.date}">
+                                        <span>${day.label[0]}</span>
+                                        <strong>${day.dayNum}</strong>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: center">
+                            <span style="font-size: 0.8rem; color: var(--text-muted)">
+                                Frequency: ${habit.frequency}
+                            </span>
+                            <div style="display: flex; gap: 0.5rem">
+                                <button class="btn btn-secondary" style="padding: 0.4rem" onclick="app.openModal('${habit.id}')">Edit</button>
+                                <button class="btn btn-secondary" style="padding: 0.4rem; color: var(--danger)" onclick="app.deleteHabit('${habit.id}')">Delete</button>
+                            </div>
+                        </div>
+                    `;
+                    list.appendChild(card);
+                });
+            }
+
+            renderStatsView(container) {
+                const totalLogs = this.habits.reduce((acc, h) => acc + Object.keys(h.logs).length, 0);
+                const completedCount = this.habits.reduce((acc, h) => acc + Object.values(h.logs).filter(v => v === 'completed').length, 0);
+                const rate = totalLogs > 0 ? Math.round((completedCount / totalLogs) * 100) : 0;
+
+                container.innerHTML = `
+                    <header>
+                        <h1>System Intelligence</h1>
+                        <p>Aggregated behavioral data across all logs</p>
+                    </header>
+                    <div class="dashboard-section">
+                        <div class="analytics-card">
+                            <h3>Consistency Graph (Last 30 Days)</h3>
+                            <canvas id="mainChart" style="margin-top: 1rem"></canvas>
+                        </div>
+                        <div class="analytics-card">
+                            <h3>Performance Metrics</h3>
+                            <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 1rem">
+                                <div>
+                                    <p style="color: var(--text-muted); font-size: 0.8rem">OVERALL COMPLETION</p>
+                                    <h2 style="color: var(--success)">${rate}%</h2>
+                                </div>
+                                <div>
+                                    <p style="color: var(--text-muted); font-size: 0.8rem">BEST PERFORMING</p>
+                                    <h3 id="best-habit">-</h3>
+                                </div>
+                                <div>
+                                    <p style="color: var(--text-muted); font-size: 0.8rem">SYSTEM INSIGHTS</p>
+                                    <ul class="insight-list" id="insight-engine" style="margin-top: 0.5rem">
+                                        <!-- Insights here -->
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                this.renderCharts();
+                this.generateInsights();
+            }
+
+            renderCharts() {
+                const ctx = document.getElementById('mainChart').getContext('2d');
+                const last30 = HabitLogic.getPastDays(30);
+                const labels = last30.map(d => d.dayNum);
+                const data = last30.map(d => {
+                    return this.habits.reduce((sum, h) => {
+                        return sum + (h.logs[d.date] === 'completed' ? 1 : 0);
+                    }, 0);
+                });
+
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'Completions',
+                            data,
+                            borderColor: '#6366f1',
+                            tension: 0.4,
+                            fill: true,
+                            backgroundColor: 'rgba(99, 102, 241, 0.1)'
+                        }]
+                    },
+                    options: {
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true, grid: { display: false } } }
+                    }
+                });
+            }
+
+            generateInsights() {
+                const engine = document.getElementById('insight-engine');
+                const bestHabitEl = document.getElementById('best-habit');
+                const insights = [];
+
+                if (this.habits.length === 0) {
+                    engine.innerHTML = '<li class="insight-item">Add habits to generate behavioral insights.</li>';
+                    return;
+                }
+
+                // Logic: Find best habit
+                const habitsWithRates = this.habits.map(h => {
+                    const total = Object.keys(h.logs).length;
+                    const comp = Object.values(h.logs).filter(v => v === 'completed').length;
+                    return { name: h.name, rate: total > 0 ? (comp / total) : 0, streak: HabitLogic.calculateStreak(h) };
+                });
+
+                const best = habitsWithRates.sort((a,b) => b.rate - a.rate)[0];
+                bestHabitEl.innerText = `${best.name} (${Math.round(best.rate*100)}%)`;
+
+                // Insight 1: Longest streak
+                const topStreak = Math.max(...habitsWithRates.map(h => h.streak));
+                if (topStreak > 0) {
+                    insights.push(`Your consistency peak is a <strong>${topStreak}-day streak</strong>. Try to beat this!`);
+                }
+
+                // Insight 2: Weekend vs Weekday (Simple analysis)
+                let weekdayWins = 0; let weekendWins = 0;
+                this.habits.forEach(h => {
+                    Object.entries(h.logs).forEach(([date, status]) => {
+                        if (status === 'completed') {
+                            const d = new Date(date).getDay();
+                            (d === 0 || d === 6) ? weekendWins++ : weekdayWins++;
+                        }
+                    });
+                });
+
+                if (weekdayWins > weekendWins * 2) {
+                    insights.push(`Your discipline is <strong>2x higher on weekdays</strong>. Consider relaxing weekend goals.`);
+                } else if (weekendWins > 0) {
+                    insights.push(`Strong weekend performance detected. You use free time effectively.`);
+                }
+
+                // Insight 3: Critical Miss
+                const missCount = this.habits.reduce((acc, h) => acc + Object.values(h.logs).filter(v => v === 'missed').length, 0);
+                if (missCount > 5) {
+                    insights.push(`You've missed ${missCount} check-ins recently. Focus on your top priority habit only.`);
+                }
+
+                engine.innerHTML = insights.map(i => `<li class="insight-item">${i}</li>`).join('');
+            }
+        }
+
+        // Initialize App
+        const app = new App();
+    </script>
+</body>
+</html>
